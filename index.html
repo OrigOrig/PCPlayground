@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCPlayground — Know Your PC</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">▲</span>
+      <div>
+        <div class="brand-name">PCPlayground</div>
+        <div class="brand-tag">Know. Play. Upgrade.</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <button class="nav-btn active" data-view="dashboard">
+        <span class="nav-icon">◧</span> Dashboard
+      </button>
+      <button class="nav-btn" data-view="games">
+        <span class="nav-icon">▤</span> What Can I Run?
+      </button>
+      <button class="nav-btn" data-view="upgrade">
+        <span class="nav-icon">↑</span> Upgrade Path
+      </button>
+      <button class="nav-btn" data-view="builds">
+        <span class="nav-icon">▥</span> My Builds
+      </button>
+      <button class="nav-btn" data-view="compare">
+        <span class="nav-icon">⇄</span> Compare
+      </button>
+      <button class="nav-btn" data-view="settings">
+        <span class="nav-icon">⚙</span> Settings
+      </button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="foot-label">Active build</div>
+      <div class="foot-build" id="sidebarActiveBuild">No build yet</div>
+    </div>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <main class="main">
+
+    <!-- ---------- ONBOARDING ---------- -->
+    <section class="view" id="view-onboarding">
+      <div class="hero">
+        <div class="hero-copy">
+          <h1>Know your PC.</h1>
+          <p>Enter your specs once. Get FPS estimates for 70+ games, see what's holding you back,
+             and find out exactly what to upgrade next.</p>
+          <button class="btn btn-primary btn-lg" id="onboardingStart">Analyze My PC →</button>
+        </div>
+      </div>
+      <div id="onboardingForm"></div>
+    </section>
+
+    <!-- ---------- DASHBOARD ---------- -->
+    <section class="view" id="view-dashboard">
+      <div class="view-head">
+        <div>
+          <h1>Dashboard</h1>
+          <p class="muted" id="dashSubtitle">Your current build, at a glance.</p>
+        </div>
+        <button class="btn btn-ghost" id="editActiveBuildBtn">Edit Build</button>
+      </div>
+
+      <div class="dash-grid">
+        <div class="card spec-card">
+          <div class="card-title">Your PC</div>
+          <div id="specList" class="spec-list"></div>
+        </div>
+
+        <div class="card score-card">
+          <div class="card-title">Overall Score</div>
+          <div class="score-ring-wrap">
+            <svg viewBox="0 0 120 120" class="score-ring">
+              <circle cx="60" cy="60" r="52" class="score-ring-bg"></circle>
+              <circle cx="60" cy="60" r="52" class="score-ring-fg" id="scoreRingFg"></circle>
+            </svg>
+            <div class="score-ring-num" id="scoreNum">--</div>
+          </div>
+          <div class="score-verdict" id="scoreVerdict">—</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Bottleneck</div>
+          <div id="bottleneckBody"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">⚡ Power Draw (est.)</div>
+          <div id="powerBody"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">Performance Preview</div>
+          <button class="btn btn-ghost btn-sm" data-goto="games">See all 70+ games →</button>
+        </div>
+        <div id="previewGames" class="game-rows"></div>
+      </div>
+    </section>
+
+    <!-- ---------- GAMES / WHAT CAN I RUN ---------- -->
+    <section class="view" id="view-games">
+      <div class="view-head">
+        <div>
+          <h1>What can I run?</h1>
+          <p class="muted">FPS estimates for your active build across 70+ games.</p>
+        </div>
+      </div>
+
+      <div class="filters card">
+        <input type="text" id="gameSearch" placeholder="Search games…" class="input">
+        <select id="filterResolution" class="input"></select>
+        <select id="filterTargetFps" class="input"></select>
+        <select id="filterQuality" class="input"></select>
+        <select id="filterSort" class="input">
+          <option value="fps-desc">Sort: Best FPS first</option>
+          <option value="fps-asc">Sort: Worst FPS first</option>
+          <option value="az">Sort: A–Z</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <div id="fullGameList" class="game-rows"></div>
+      </div>
+    </section>
+
+    <!-- ---------- UPGRADE PATH ---------- -->
+    <section class="view" id="view-upgrade">
+      <div class="view-head">
+        <div>
+          <h1>What should I upgrade first?</h1>
+          <p class="muted">Based on your bottleneck across the whole game library.</p>
+        </div>
+      </div>
+      <div id="upgradeBody"></div>
+    </section>
+
+    <!-- ---------- BUILDS ---------- -->
+    <section class="view" id="view-builds">
+      <div class="view-head">
+        <div>
+          <h1>My Builds</h1>
+          <p class="muted">Save multiple rigs — current, upgrade candidates, or a friend's PC.</p>
+        </div>
+        <button class="btn btn-primary" id="newBuildBtn">+ New Build</button>
+      </div>
+      <div id="buildsGrid" class="builds-grid"></div>
+    </section>
+
+    <!-- ---------- COMPARE ---------- -->
+    <section class="view" id="view-compare">
+      <div class="view-head">
+        <div>
+          <h1>Compare Builds</h1>
+          <p class="muted">Put two rigs side by side.</p>
+        </div>
+      </div>
+      <div class="compare-picker">
+        <select id="compareA" class="input"></select>
+        <span class="vs">vs</span>
+        <select id="compareB" class="input"></select>
+      </div>
+      <div id="compareBody"></div>
+    </section>
+
+    <!-- ---------- SETTINGS ---------- -->
+    <section class="view" id="view-settings">
+      <div class="view-head">
+        <div>
+          <h1>Settings</h1>
+          <p class="muted">Saved automatically in cookies on this device.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Theme</div>
+        <div class="theme-options" id="themeOptions">
+          <button class="theme-swatch" data-theme="dark">Dark</button>
+          <button class="theme-swatch" data-theme="light">Light</button>
+          <button class="theme-swatch" data-theme="custom">Custom</button>
+        </div>
+        <div class="accent-row" id="customThemeRow">
+          <label>Gradient start <input type="color" id="accentColor1"></label>
+          <label>Gradient end <input type="color" id="accentColor2"></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Defaults</div>
+        <div class="settings-row">
+          <label>Default resolution
+            <select id="settingsResolution" class="input"></select>
+          </label>
+          <label>Default target FPS
+            <select id="settingsTargetFps" class="input"></select>
+          </label>
+          <label>Default quality preset
+            <select id="settingsQuality" class="input"></select>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Data</div>
+        <p class="muted">All your builds and preferences live in cookies on this browser — nothing is sent anywhere.</p>
+        <div class="settings-actions">
+          <button class="btn btn-ghost" id="exportDataBtn">Export as file</button>
+          <button class="btn btn-danger" id="clearDataBtn">Clear all data</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ===================== BUILD MODAL ===================== -->
+<div class="modal-backdrop" id="buildModalBackdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="buildModalTitle">New Build</h2>
+      <button class="modal-close" id="buildModalClose">✕</button>
+    </div>
+    <div class="modal-body" id="buildModalBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="buildModalCancel">Cancel</button>
+      <button class="btn btn-primary" id="buildModalSave">Save Build</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
