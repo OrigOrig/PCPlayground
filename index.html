@@ -3,245 +3,1053 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PCPlayground — Know Your PC</title>
-<link rel="stylesheet" href="styles.css">
+<title>RIGSPACE — 3D PC Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#111217;
+    --panel:#17181f;
+    --panel-2:#1d1f28;
+    --line:#2a2c36;
+    --text:#e8e8ec;
+    --sub:#8b8d9c;
+    --accent:#7c9eff;
+    --accent-2:#ff8a5c;
+    --good:#5ce6a0;
+    --bad:#ff6b7a;
+    --warn:#ffcf5c;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow:hidden;}
+  h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:#33353f;border-radius:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  #app{display:grid;grid-template-columns:300px 1fr 320px;grid-template-rows:56px 1fr;height:100%;}
+  #topbar{grid-column:1/4;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#15161c,#111217);}
+  #brand{display:flex;align-items:center;gap:10px;}
+  #brand .mark{width:26px;height:26px;border-radius:6px;background:conic-gradient(from 210deg,var(--accent),#b48cff,var(--accent-2),var(--accent));}
+  #brand .name{font-weight:700;font-size:17px;letter-spacing:.2px;}
+  #brand .name span{color:var(--sub);font-weight:500;font-size:12px;margin-left:6px;}
+  #viewctrls{display:flex;gap:6px;}
+  .pill{background:var(--panel-2);border:1px solid var(--line);color:var(--sub);font-size:12px;padding:7px 12px;border-radius:20px;cursor:pointer;transition:all .15s;user-select:none;}
+  .pill:hover{color:var(--text);border-color:#40424f;}
+  .pill.active{background:var(--accent);color:#0d0f14;border-color:var(--accent);font-weight:600;}
+
+  #left{border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--panel);min-height:0;}
+  #cats{display:flex;flex-wrap:wrap;gap:6px;padding:12px;border-bottom:1px solid var(--line);}
+  .cat-btn{font-size:11px;padding:6px 10px;border-radius:7px;background:var(--panel-2);color:var(--sub);border:1px solid transparent;cursor:pointer;}
+  .cat-btn.active{color:var(--text);border-color:var(--accent);background:#20263a;}
+  #partlist{flex:1;overflow-y:auto;padding:10px;}
+  .part-card{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:border-color .15s,background .15s;}
+  .part-card:hover{border-color:#454859;}
+  .part-card.selected{border-color:var(--accent);background:#1a2032;}
+  .part-name{font-size:13px;font-weight:600;}
+  .part-brand{font-size:10.5px;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
+  .part-meta{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
+  .part-spec{font-size:10.5px;color:var(--sub);}
+  .part-price{font-size:12px;font-weight:600;color:var(--accent-2);}
+
+  #center{position:relative;min-height:0;}
+  #canvas-wrap{position:absolute;inset:0;}
+  #hud-top{position:absolute;top:14px;left:14px;right:14px;display:flex;justify-content:space-between;pointer-events:none;}
+  #cam-presets{display:flex;gap:6px;pointer-events:all;}
+  #explode-wrap{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);width:340px;background:rgba(23,24,31,.85);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:12px;padding:10px 16px;}
+  #explode-wrap label{font-size:10.5px;color:var(--sub);display:flex;justify-content:space-between;margin-bottom:6px;}
+  #explode{width:100%;accent-color:var(--accent);}
+  #toggles{position:absolute;bottom:16px;right:16px;display:flex;flex-direction:column;gap:6px;pointer-events:all;}
+  #loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:var(--bg);z-index:5;}
+  #loading .spin{width:34px;height:34px;border-radius:50%;border:3px solid #2a2c36;border-top-color:var(--accent);animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #empty-hint{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:12px;color:var(--sub);background:rgba(23,24,31,.85);padding:6px 14px;border-radius:20px;border:1px solid var(--line);pointer-events:none;}
+
+  #right{border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:18px;}
+  .panel-title{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--sub);margin-bottom:10px;font-weight:600;}
+  #wattage-card{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center;}
+  #wattage-num{font-size:32px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+  #wattage-sub{font-size:11px;color:var(--sub);margin-top:2px;}
+  #wattage-bar{height:6px;border-radius:4px;background:#2a2c36;margin-top:12px;overflow:hidden;}
+  #wattage-fill{height:100%;background:linear-gradient(90deg,var(--good),var(--warn),var(--bad));width:0%;transition:width .3s;}
+
+  .check-row{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .check-row:last-child{border-bottom:none;}
+  .dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+  .dot.ok{background:var(--good);box-shadow:0 0 6px var(--good);}
+  .dot.err{background:var(--bad);box-shadow:0 0 6px var(--bad);}
+  .dot.neutral{background:#454859;}
+  .check-text{font-size:12px;line-height:1.4;}
+  .check-text b{font-weight:600;}
+  .check-sub{font-size:11px;color:var(--sub);margin-top:1px;}
+
+  #fps-card{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px;}
+  .fps-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:8px;}
+  .fps-row:last-child{margin-bottom:0;}
+  .fps-bar-bg{width:130px;height:6px;background:#2a2c36;border-radius:4px;overflow:hidden;}
+  .fps-bar{height:100%;background:linear-gradient(90deg,var(--accent),#b48cff);}
+
+  #price-card{background:linear-gradient(135deg,#1c2130,#191b23);border:1px solid var(--line);border-radius:12px;padding:16px;}
+  #price-total{font-size:26px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent-2);}
+  .price-line{display:flex;justify-content:space-between;font-size:11.5px;color:var(--sub);padding:3px 0;}
+
+  #argb-card{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px;}
+  #hue-slider{width:100%;height:14px;border-radius:8px;background:linear-gradient(90deg,#ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000);appearance:none;cursor:pointer;}
+  #hue-slider::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid #111;cursor:pointer;}
+  .profile-row{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
+  .profile-btn{flex:1;min-width:60px;font-size:10.5px;padding:7px;border-radius:7px;background:#1d1f28;color:var(--sub);border:1px solid var(--line);cursor:pointer;text-align:center;}
+  .profile-btn.active{color:#0d0f14;background:var(--accent);border-color:var(--accent);font-weight:600;}
+
+  .icon-btn{width:34px;height:34px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--sub);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;}
+  .icon-btn.active{color:var(--accent);border-color:var(--accent);}
+
+  #note{font-size:10.5px;color:#5c5e6b;line-height:1.5;padding-top:4px;border-top:1px solid var(--line);}
+
+  @media (max-width: 900px){
+    #app{grid-template-columns:1fr;grid-template-rows:56px 40vh 1fr;}
+    #left{border-right:none;border-bottom:1px solid var(--line);max-height:40vh;}
+    #right{border-left:none;border-top:1px solid var(--line);}
+  }
+</style>
 </head>
 <body>
 
-<div class="app">
+<div id="app">
+  <div id="topbar">
+    <div id="brand">
+      <div class="mark"></div>
+      <div class="name">RIGSPACE <span>3D BUILD PREVIEW</span></div>
+    </div>
+    <div id="viewctrls">
+      <div class="pill active" data-glass="1" id="glass-toggle">Glass panel</div>
+      <div class="pill" id="ar-hint-btn">AR preview</div>
+    </div>
+  </div>
 
-  <!-- ===================== SIDEBAR ===================== -->
-  <aside class="sidebar">
-    <div class="brand">
-      <span class="brand-mark">▲</span>
-      <div>
-        <div class="brand-name">PCPlayground</div>
-        <div class="brand-tag">Know. Play. Upgrade.</div>
+  <div id="left">
+    <div id="cats"></div>
+    <div id="partlist"></div>
+  </div>
+
+  <div id="center">
+    <div id="canvas-wrap"></div>
+    <div id="loading"><div class="spin"></div><div style="font-size:12px;color:var(--sub)">Setting up the viewport…</div></div>
+    <div id="empty-hint">Pick parts on the left — they'll snap into place here</div>
+
+    <div id="hud-top">
+      <div id="cam-presets">
+        <div class="pill active" data-cam="iso">Iso</div>
+        <div class="pill" data-cam="front">Front</div>
+        <div class="pill" data-cam="side">Side</div>
+        <div class="pill" data-cam="top">Top</div>
+        <div class="pill" data-cam="internal">Internal</div>
       </div>
     </div>
 
-    <nav class="nav">
-      <button class="nav-btn active" data-view="dashboard">
-        <span class="nav-icon">◧</span> Dashboard
-      </button>
-      <button class="nav-btn" data-view="games">
-        <span class="nav-icon">▤</span> What Can I Run?
-      </button>
-      <button class="nav-btn" data-view="upgrade">
-        <span class="nav-icon">↑</span> Upgrade Path
-      </button>
-      <button class="nav-btn" data-view="builds">
-        <span class="nav-icon">▥</span> My Builds
-      </button>
-      <button class="nav-btn" data-view="compare">
-        <span class="nav-icon">⇄</span> Compare
-      </button>
-      <button class="nav-btn" data-view="settings">
-        <span class="nav-icon">⚙</span> Settings
-      </button>
-    </nav>
-
-    <div class="sidebar-foot">
-      <div class="foot-label">Active build</div>
-      <div class="foot-build" id="sidebarActiveBuild">No build yet</div>
+    <div id="explode-wrap">
+      <label><span>Exploded view</span><span id="explode-val" class="mono">0%</span></label>
+      <input type="range" id="explode" min="0" max="100" value="0">
     </div>
-  </aside>
 
-  <!-- ===================== MAIN ===================== -->
-  <main class="main">
-
-    <!-- ---------- ONBOARDING ---------- -->
-    <section class="view" id="view-onboarding">
-      <div class="hero">
-        <div class="hero-copy">
-          <h1>Know your PC.</h1>
-          <p>Enter your specs once. Get FPS estimates for 70+ games, see what's holding you back,
-             and find out exactly what to upgrade next.</p>
-          <button class="btn btn-primary btn-lg" id="onboardingStart">Analyze My PC →</button>
-        </div>
-      </div>
-      <div id="onboardingForm"></div>
-    </section>
-
-    <!-- ---------- DASHBOARD ---------- -->
-    <section class="view" id="view-dashboard">
-      <div class="view-head">
-        <div>
-          <h1>Dashboard</h1>
-          <p class="muted" id="dashSubtitle">Your current build, at a glance.</p>
-        </div>
-        <button class="btn btn-ghost" id="editActiveBuildBtn">Edit Build</button>
-      </div>
-
-      <div class="dash-grid">
-        <div class="card spec-card">
-          <div class="card-title">Your PC</div>
-          <div id="specList" class="spec-list"></div>
-        </div>
-
-        <div class="card score-card">
-          <div class="card-title">Overall Score</div>
-          <div class="score-ring-wrap">
-            <svg viewBox="0 0 120 120" class="score-ring">
-              <circle cx="60" cy="60" r="52" class="score-ring-bg"></circle>
-              <circle cx="60" cy="60" r="52" class="score-ring-fg" id="scoreRingFg"></circle>
-            </svg>
-            <div class="score-ring-num" id="scoreNum">--</div>
-          </div>
-          <div class="score-verdict" id="scoreVerdict">—</div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Bottleneck</div>
-          <div id="bottleneckBody"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">⚡ Power Draw (est.)</div>
-          <div id="powerBody"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title-row">
-          <div class="card-title">Performance Preview</div>
-          <button class="btn btn-ghost btn-sm" data-goto="games">See all 70+ games →</button>
-        </div>
-        <div id="previewGames" class="game-rows"></div>
-      </div>
-    </section>
-
-    <!-- ---------- GAMES / WHAT CAN I RUN ---------- -->
-    <section class="view" id="view-games">
-      <div class="view-head">
-        <div>
-          <h1>What can I run?</h1>
-          <p class="muted">FPS estimates for your active build across 70+ games.</p>
-        </div>
-      </div>
-
-      <div class="filters card">
-        <input type="text" id="gameSearch" placeholder="Search games…" class="input">
-        <select id="filterResolution" class="input"></select>
-        <select id="filterTargetFps" class="input"></select>
-        <select id="filterQuality" class="input"></select>
-        <select id="filterSort" class="input">
-          <option value="fps-desc">Sort: Best FPS first</option>
-          <option value="fps-asc">Sort: Worst FPS first</option>
-          <option value="az">Sort: A–Z</option>
-        </select>
-      </div>
-
-      <div class="card">
-        <div id="fullGameList" class="game-rows"></div>
-      </div>
-    </section>
-
-    <!-- ---------- UPGRADE PATH ---------- -->
-    <section class="view" id="view-upgrade">
-      <div class="view-head">
-        <div>
-          <h1>What should I upgrade first?</h1>
-          <p class="muted">Based on your bottleneck across the whole game library.</p>
-        </div>
-      </div>
-      <div id="upgradeBody"></div>
-    </section>
-
-    <!-- ---------- BUILDS ---------- -->
-    <section class="view" id="view-builds">
-      <div class="view-head">
-        <div>
-          <h1>My Builds</h1>
-          <p class="muted">Save multiple rigs — current, upgrade candidates, or a friend's PC.</p>
-        </div>
-        <button class="btn btn-primary" id="newBuildBtn">+ New Build</button>
-      </div>
-      <div id="buildsGrid" class="builds-grid"></div>
-    </section>
-
-    <!-- ---------- COMPARE ---------- -->
-    <section class="view" id="view-compare">
-      <div class="view-head">
-        <div>
-          <h1>Compare Builds</h1>
-          <p class="muted">Put two rigs side by side.</p>
-        </div>
-      </div>
-      <div class="compare-picker">
-        <select id="compareA" class="input"></select>
-        <span class="vs">vs</span>
-        <select id="compareB" class="input"></select>
-      </div>
-      <div id="compareBody"></div>
-    </section>
-
-    <!-- ---------- SETTINGS ---------- -->
-    <section class="view" id="view-settings">
-      <div class="view-head">
-        <div>
-          <h1>Settings</h1>
-          <p class="muted">Saved automatically in cookies on this device.</p>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Theme</div>
-        <div class="theme-options" id="themeOptions">
-          <button class="theme-swatch" data-theme="dark">Dark</button>
-          <button class="theme-swatch" data-theme="light">Light</button>
-          <button class="theme-swatch" data-theme="custom">Custom</button>
-        </div>
-        <div class="accent-row" id="customThemeRow">
-          <label>Gradient start <input type="color" id="accentColor1"></label>
-          <label>Gradient end <input type="color" id="accentColor2"></label>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Defaults</div>
-        <div class="settings-row">
-          <label>Default resolution
-            <select id="settingsResolution" class="input"></select>
-          </label>
-          <label>Default target FPS
-            <select id="settingsTargetFps" class="input"></select>
-          </label>
-          <label>Default quality preset
-            <select id="settingsQuality" class="input"></select>
-          </label>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Data</div>
-        <p class="muted">All your builds and preferences live in cookies on this browser — nothing is sent anywhere.</p>
-        <div class="settings-actions">
-          <button class="btn btn-ghost" id="exportDataBtn">Export as file</button>
-          <button class="btn btn-danger" id="clearDataBtn">Clear all data</button>
-        </div>
-      </div>
-    </section>
-
-  </main>
-</div>
-
-<!-- ===================== BUILD MODAL ===================== -->
-<div class="modal-backdrop" id="buildModalBackdrop">
-  <div class="modal">
-    <div class="modal-head">
-      <h2 id="buildModalTitle">New Build</h2>
-      <button class="modal-close" id="buildModalClose">✕</button>
+    <div id="toggles">
+      <div class="icon-btn active" id="grid-toggle" title="Toggle ground grid">▦</div>
+      <div class="icon-btn" id="spin-toggle" title="Auto-rotate">⟳</div>
     </div>
-    <div class="modal-body" id="buildModalBody"></div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" id="buildModalCancel">Cancel</button>
-      <button class="btn btn-primary" id="buildModalSave">Save Build</button>
+  </div>
+
+  <div id="right">
+    <div>
+      <div class="panel-title">System power draw</div>
+      <div id="wattage-card">
+        <div id="wattage-num" class="mono">0 W</div>
+        <div id="wattage-sub">estimated load · pick a PSU to compare</div>
+        <div id="wattage-bar"><div id="wattage-fill"></div></div>
+      </div>
     </div>
+
+    <div>
+      <div class="panel-title">Compatibility diagnostics</div>
+      <div id="checks"></div>
+    </div>
+
+    <div>
+      <div class="panel-title">Estimated gaming FPS <span style="text-transform:none;color:#5c5e6b">(1440p, high)</span></div>
+      <div id="fps-card"><div id="fps-list"></div></div>
+    </div>
+
+    <div>
+      <div class="panel-title">ARGB lighting</div>
+      <div id="argb-card">
+        <input type="range" id="hue-slider" min="0" max="360" value="220">
+        <div class="profile-row">
+          <div class="profile-btn active" data-p="rainbow">Rainbow</div>
+          <div class="profile-btn" data-p="pulse">Pulse</div>
+          <div class="profile-btn" data-p="static">Static</div>
+          <div class="profile-btn" data-p="off">Off</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-title">Build cost</div>
+      <div id="price-card">
+        <div id="price-total" class="mono">$0</div>
+        <div id="price-lines" style="margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <div id="note">Specs and prices are representative reference values for visualization, not live retailer data — double-check exact figures before buying. Parts are rendered as accurate-proportion procedural models, not manufacturer CAD scans.</div>
   </div>
 </div>
 
-<script src="data.js"></script>
-<script src="app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.156.1/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.156.1/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script>
+/* ============================== DATA ============================== */
+const DB = {
+  cpu: [
+    {id:'i9-14900k', brand:'Intel', name:'Core i9-14900K', socket:'LGA1700', tdp:253, price:589, cinebench:41500, tier:9},
+    {id:'i7-14700k', brand:'Intel', name:'Core i7-14700K', socket:'LGA1700', tdp:253, price:409, cinebench:34500, tier:8},
+    {id:'i5-14600k', brand:'Intel', name:'Core i5-14600K', socket:'LGA1700', tdp:181, price:319, cinebench:26500, tier:6},
+    {id:'ultra9-285k', brand:'Intel', name:'Core Ultra 9 285K', socket:'LGA1851', tdp:250, price:589, cinebench:40800, tier:9},
+    {id:'r9-7950x3d', brand:'AMD', name:'Ryzen 9 7950X3D', socket:'AM5', tdp:120, price:599, cinebench:39900, tier:9},
+    {id:'r7-7800x3d', brand:'AMD', name:'Ryzen 7 7800X3D', socket:'AM5', tdp:120, price:359, cinebench:24000, tier:8},
+    {id:'r5-7600', brand:'AMD', name:'Ryzen 5 7600', socket:'AM5', tdp:105, price:199, cinebench:18800, tier:5},
+    {id:'r9-9950x', brand:'AMD', name:'Ryzen 9 9950X', socket:'AM5', tdp:170, price:649, cinebench:46200, tier:10},
+  ],
+  gpu: [
+    {id:'4090', brand:'NVIDIA', name:'GeForce RTX 4090', aib:'Founders Ed.', len:304, tdp:450, price:1599, tier:10},
+    {id:'4080s', brand:'NVIDIA', name:'GeForce RTX 4080 Super', aib:'ASUS TUF', len:348, tdp:320, price:999, tier:8.5},
+    {id:'4070ti', brand:'NVIDIA', name:'GeForce RTX 4070 Ti', aib:'MSI Gaming X', len:336, tdp:285, price:799, tier:7.5},
+    {id:'4070', brand:'NVIDIA', name:'GeForce RTX 4070', aib:'Gigabyte Eagle', len:267, tdp:200, price:549, tier:6.8},
+    {id:'4060', brand:'NVIDIA', name:'GeForce RTX 4060', aib:'Zotac Twin Edge', len:204, tdp:115, price:299, tier:5},
+    {id:'7900xtx', brand:'AMD', name:'Radeon RX 7900 XTX', aib:'Sapphire Nitro+', len:319, tdp:355, price:949, tier:9},
+    {id:'7800xt', brand:'AMD', name:'Radeon RX 7800 XT', aib:'PowerColor Hellhound', len:302, tdp:263, price:499, tier:7},
+    {id:'arc-b580', brand:'Intel', name:'Arc B580', aib:'Reference', len:280, tdp:190, price:249, tier:5.2},
+  ],
+  mobo: [
+    {id:'z790-hero', brand:'ASUS', name:'ROG Maximus Z790 Hero', socket:'LGA1700', form:'ATX', ram:'DDR5', price:629},
+    {id:'z790-tuf', brand:'ASUS', name:'TUF Gaming Z790-Plus', socket:'LGA1700', form:'ATX', ram:'DDR5', price:229},
+    {id:'z890-carbon', brand:'MSI', name:'MPG Z890 Carbon', socket:'LGA1851', form:'ATX', ram:'DDR5', price:399},
+    {id:'x670e-hero', brand:'ASUS', name:'ROG Crosshair X670E Hero', socket:'AM5', form:'ATX', ram:'DDR5', price:699},
+    {id:'b650-tomahawk', brand:'MSI', name:'MAG B650 Tomahawk', socket:'AM5', form:'ATX', ram:'DDR5', price:219},
+    {id:'b650i-itx', brand:'Gigabyte', name:'B650I Aorus Ultra', socket:'AM5', form:'ITX', ram:'DDR5', price:249},
+  ],
+  ram: [
+    {id:'ddr5-32-6000', brand:'Corsair', name:'Vengeance RGB 32GB (2x16) 6000MHz', type:'DDR5', capacity:32, sticks:2, price:129},
+    {id:'ddr5-64-6000', brand:'G.Skill', name:'Trident Z5 RGB 64GB (2x32) 6000MHz', type:'DDR5', capacity:64, sticks:2, price:229},
+    {id:'ddr5-32-7200', brand:'Kingston', name:'Fury Beast RGB 32GB (2x16) 7200MHz', type:'DDR5', capacity:32, sticks:2, price:159},
+  ],
+  cooler: [
+    {id:'nh-d15', brand:'Noctua', name:'NH-D15 Air Tower', kind:'air', height:165, price:109, radMm:0},
+    {id:'peerless', brand:'Thermalright', name:'Peerless Assassin 120', kind:'air', height:155, price:35, radMm:0},
+    {id:'aio240', brand:'Corsair', name:'iCUE Link H150i', kind:'aio', height:45, radMm:360, price:189},
+    {id:'aio280', brand:'NZXT', name:'Kraken 280', kind:'aio', height:52, radMm:280, price:199},
+  ],
+  psu: [
+    {id:'rm750', brand:'Corsair', name:'RM750x', watt:750, rating:'80+ Gold', price:119},
+    {id:'rm1000', brand:'Corsair', name:'RM1000x', watt:1000, rating:'80+ Gold', price:189},
+    {id:'toughpower850', brand:'Thermaltake', name:'Toughpower GF3 850W', watt:850, rating:'80+ Gold', price:139},
+    {id:'hx1200', brand:'Corsair', name:'HX1200', watt:1200, rating:'80+ Platinum', price:279},
+  ],
+  case: [
+    {id:'o11d', brand:'Lian Li', name:'O11 Dynamic EVO', form:'ATX', maxGpuLen:426, maxCoolerH:167, radSupport:360, glass:true, price:169},
+    {id:'nzxt-h5', brand:'NZXT', name:'H5 Flow', form:'ATX', maxGpuLen:365, maxCoolerH:165, radSupport:280, glass:true, price:94},
+    {id:'meshify2', brand:'Fractal Design', name:'Meshify 2 Compact', form:'ATX', maxGpuLen:341, maxCoolerH:169, radSupport:280, glass:true, price:109},
+    {id:'ncore100', brand:'NZXT', name:'H1 V2', form:'ITX', maxGpuLen:325, maxCoolerH:80, radSupport:140, glass:true, price:209},
+  ],
+  storage: [
+    {id:'980pro-2tb', brand:'Samsung', name:'980 Pro 2TB NVMe', capacity:2000, price:139},
+    {id:'sn850x-1tb', brand:'WD Black', name:'SN850X 1TB NVMe', capacity:1000, price:79},
+  ],
+};
+
+const CATS = [
+  {k:'cpu', label:'CPU'}, {k:'gpu', label:'GPU'}, {k:'mobo', label:'Motherboard'},
+  {k:'ram', label:'RAM'}, {k:'cooler', label:'Cooler'}, {k:'psu', label:'PSU'},
+  {k:'case', label:'Case'}, {k:'storage', label:'Storage'},
+];
+
+const state = { cpu:null, gpu:null, mobo:null, ram:null, cooler:null, psu:null, case:null, storage:null,
+  activeCat:'case', explode:0, glass:true, hue:220, profile:'rainbow', autoRotate:false };
+
+/* ============================== UI: PART LIST ============================== */
+const catsEl = document.getElementById('cats');
+CATS.forEach(c=>{
+  const b = document.createElement('div');
+  b.className = 'cat-btn' + (c.k===state.activeCat?' active':'');
+  b.textContent = c.label;
+  b.dataset.cat = c.k;
+  b.onclick = ()=>{ state.activeCat=c.k; renderCatButtons(); renderPartList(); };
+  catsEl.appendChild(b);
+});
+function renderCatButtons(){
+  [...catsEl.children].forEach(b=>b.classList.toggle('active', b.dataset.cat===state.activeCat));
+}
+
+function specLine(cat, item){
+  switch(cat){
+    case 'cpu': return `${item.socket} · ${item.tdp}W TDP`;
+    case 'gpu': return `${item.len}mm · ${item.tdp}W · ${item.aib}`;
+    case 'mobo': return `${item.socket} · ${item.form} · ${item.ram}`;
+    case 'ram': return `${item.type} · ${item.capacity}GB (${item.sticks}x)`;
+    case 'cooler': return item.kind==='aio' ? `AIO · ${item.radMm}mm radiator` : `Air · ${item.height}mm tall`;
+    case 'psu': return `${item.watt}W · ${item.rating}`;
+    case 'case': return `${item.form} · max GPU ${item.maxGpuLen}mm`;
+    case 'storage': return `NVMe · ${item.capacity}GB`;
+  }
+}
+
+function renderPartList(){
+  const list = document.getElementById('partlist');
+  list.innerHTML = '';
+  DB[state.activeCat].forEach(item=>{
+    const card = document.createElement('div');
+    card.className = 'part-card' + (state[state.activeCat] && state[state.activeCat].id===item.id ? ' selected':'');
+    card.innerHTML = `
+      <div class="part-brand">${item.brand}</div>
+      <div class="part-name">${item.name}</div>
+      <div class="part-meta">
+        <div class="part-spec">${specLine(state.activeCat, item)}</div>
+        <div class="part-price">$${item.price}</div>
+      </div>`;
+    card.onclick = ()=>{ selectPart(state.activeCat, item); };
+    list.appendChild(card);
+  });
+}
+function selectPart(cat, item){
+  state[cat] = item;
+  renderPartList();
+  rebuildScene();
+  updateDiagnostics();
+  updatePrice();
+  updateFps();
+  document.getElementById('empty-hint').style.display = 'none';
+}
+renderPartList();
+
+/* ============================== THREE.JS SCENE ============================== */
+const wrap = document.getElementById('canvas-wrap');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0e12);
+scene.fog = new THREE.Fog(0x0d0e12, 22, 46);
+
+const camera = new THREE.PerspectiveCamera(42, wrap.clientWidth/wrap.clientHeight, 0.1, 100);
+camera.position.set(7, 5, 9);
+
+const renderer = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.physicallyCorrectLights = true;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+wrap.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 3;
+controls.maxDistance = 24;
+controls.maxPolarAngle = Math.PI*0.49;
+controls.target.set(0, 1.6, 0);
+
+// Lighting: 3-point studio setup + soft ambience
+const hemi = new THREE.HemisphereLight(0x8fa5ff, 0x0a0a0d, 0.55);
+scene.add(hemi);
+
+const key = new THREE.DirectionalLight(0xffffff, 2.4);
+key.position.set(6, 9, 5);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.camera.left=-8; key.shadow.camera.right=8; key.shadow.camera.top=8; key.shadow.camera.bottom=-8;
+key.shadow.bias = -0.0015;
+scene.add(key);
+
+const fill = new THREE.DirectionalLight(0x7c9eff, 0.6);
+fill.position.set(-6, 4, -3);
+scene.add(fill);
+
+const rim = new THREE.DirectionalLight(0xff8a5c, 0.9);
+rim.position.set(-3, 6, -8);
+scene.add(rim);
+
+// Ground
+const groundMat = new THREE.MeshStandardMaterial({color:0x14151b, roughness:0.85, metalness:0.05});
+const ground = new THREE.Mesh(new THREE.CircleGeometry(20, 64), groundMat);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+const grid = new THREE.GridHelper(20, 40, 0x2a2c36, 0x1c1e26);
+grid.position.y = 0.001;
+scene.add(grid);
+
+/* ---------- Materials ---------- */
+const M = {
+  chassis: new THREE.MeshStandardMaterial({color:0x1b1c22, metalness:0.75, roughness:0.35}),
+  chassisMesh: new THREE.MeshStandardMaterial({color:0x0e0f13, metalness:0.4, roughness:0.7, side:THREE.DoubleSide, wireframe:false}),
+  pcb: new THREE.MeshStandardMaterial({color:0x0a2a1e, metalness:0.3, roughness:0.6}),
+  pcbGpu: new THREE.MeshStandardMaterial({color:0x101014, metalness:0.5, roughness:0.5}),
+  copper: new THREE.MeshStandardMaterial({color:0xc98a4b, metalness:1, roughness:0.25}),
+  gold: new THREE.MeshStandardMaterial({color:0xd4af5a, metalness:1, roughness:0.3}),
+  alu: new THREE.MeshStandardMaterial({color:0xb9bcc4, metalness:0.9, roughness:0.28}),
+  aluDark: new THREE.MeshStandardMaterial({color:0x4b4d55, metalness:0.85, roughness:0.35}),
+  plastic: new THREE.MeshStandardMaterial({color:0x1a1b20, metalness:0.1, roughness:0.55}),
+  plasticWhite: new THREE.MeshStandardMaterial({color:0xd9dbe0, metalness:0.05, roughness:0.4}),
+  fanBlade: new THREE.MeshStandardMaterial({color:0x121317, metalness:0.3, roughness:0.5, transparent:true, opacity:0.92}),
+  glass: new THREE.MeshPhysicalMaterial({color:0x8fb3ff, metalness:0, roughness:0.05, transmission:0.92, thickness:0.05, ior:1.45, transparent:true, opacity:0.28}),
+  ic: new THREE.MeshStandardMaterial({color:0x0b0b0d, metalness:0.4, roughness:0.5}),
+  ihs: new THREE.MeshStandardMaterial({color:0xd7d9dd, metalness:0.95, roughness:0.18}),
+  cableSleeve: new THREE.MeshStandardMaterial({color:0x101014, metalness:0.15, roughness:0.6}),
+};
+
+/* ---------- Emissive ARGB pool (updated every frame) ---------- */
+const argbMats = [];
+function makeArgb(){
+  const m = new THREE.MeshStandardMaterial({color:0x101014, emissive:0x4fd1ff, emissiveIntensity:1.2, metalness:0.2, roughness:0.4, transparent:true, opacity:0.95});
+  argbMats.push(m);
+  return m;
+}
+
+/* ---------- Component builders (procedural, accurate proportions, arbitrary units: 1 unit ≈ 40mm) ---------- */
+const U = 1/40; // mm -> scene units
+
+function makeFan(diameterMm, withArgbRing=true){
+  const g = new THREE.Group();
+  const r = diameterMm*U/2;
+  const frame = new THREE.Mesh(new THREE.TorusGeometry(r*0.94, r*0.06, 8, 24), M.plastic);
+  g.add(frame);
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(r*0.22, r*0.22, r*0.12, 20), M.plastic);
+  hub.rotation.x = Math.PI/2;
+  g.add(hub);
+  const bladeMat = M.fanBlade;
+  for(let i=0;i<9;i++){
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(r*0.62, r*0.16, 0.01), bladeMat);
+    blade.position.set(Math.cos(i/9*Math.PI*2)*r*0.42, Math.sin(i/9*Math.PI*2)*r*0.42, 0);
+    blade.rotation.z = i/9*Math.PI*2 + 0.5;
+    g.add(blade);
+  }
+  if(withArgbRing){
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(r*0.8, r*0.035, 8, 24), makeArgb());
+    g.add(ring);
+  }
+  return g;
+}
+
+function buildMotherboard(mobo, cpu, ram){
+  const g = new THREE.Group();
+  const w = 8.6, h = 9.6, t = 0.06;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(w, t, h), M.pcb);
+  board.castShadow = board.receiveShadow = true;
+  g.add(board);
+
+  // trace hint layer
+  const traceMat = new THREE.MeshStandardMaterial({color:0x1c6b4a, metalness:0.6, roughness:0.4, transparent:true, opacity:0.5});
+  const traces = new THREE.Mesh(new THREE.PlaneGeometry(w*0.94, h*0.94), traceMat);
+  traces.rotation.x = -Math.PI/2; traces.position.y = t/2+0.001;
+  g.add(traces);
+
+  // CPU socket + load plate
+  const socket = new THREE.Mesh(new THREE.BoxGeometry(1.5,0.08,1.5), M.plastic);
+  socket.position.set(-1.6, t/2+0.04, -2.6);
+  g.add(socket);
+  const loadPlate = new THREE.Mesh(new THREE.TorusGeometry(0.62,0.06,6,4), M.alu);
+  loadPlate.position.set(-1.6, t/2+0.12, -2.6);
+  loadPlate.rotation.x = Math.PI/2; loadPlate.rotation.z = Math.PI/4;
+  g.add(loadPlate);
+
+  if(cpu){
+    const ihs = new THREE.Mesh(new THREE.BoxGeometry(1.0,0.14,1.0), M.ihs);
+    ihs.position.set(-1.6, t/2+0.14, -2.6);
+    ihs.castShadow = true;
+    g.add(ihs);
+    const sub = new THREE.Mesh(new THREE.BoxGeometry(1.15,0.05,1.15), new THREE.MeshStandardMaterial({color:0x1a2a1f, metalness:0.3, roughness:0.6}));
+    sub.position.set(-1.6, t/2+0.06, -2.6);
+    g.add(sub);
+  }
+
+  // VRM heatsinks near socket
+  for(const [dx,dz] of [[-1.6,-3.9],[-2.85,-2.6]]){
+    const vrm = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,1.6), M.aluDark);
+    vrm.position.set(dx, t/2+0.28, dz);
+    vrm.castShadow = true;
+    g.add(vrm);
+    for(let i=0;i<7;i++){
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.46,0.46,0.02), M.alu);
+      fin.position.set(dx, t/2+0.28, dz-0.7+i*0.22);
+      g.add(fin);
+    }
+  }
+
+  // DIMM slots + RAM
+  const dimmCount = ram ? ram.sticks*2 : 4;
+  for(let i=0;i<4;i++){
+    const slot = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.1,3.0), M.plastic);
+    slot.position.set(0.6+i*0.24, t/2+0.05, -2.3);
+    g.add(slot);
+  }
+  if(ram){
+    const stickPositions = ram.sticks===2 ? [0.6,1.32] : [0.6,0.84,1.08,1.32];
+    stickPositions.forEach(x=>{
+      const stick = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.7,3.0), M.aluDark);
+      body.position.y = t/2+0.4;
+      body.castShadow = true;
+      stick.add(body);
+      const argbStrip = new THREE.Mesh(new THREE.BoxGeometry(0.02,0.66,2.9), makeArgb());
+      argbStrip.position.set(0.06, t/2+0.4, 0);
+      stick.add(argbStrip);
+      stick.position.x = x;
+      stick.position.z = -2.3;
+      g.add(stick);
+    });
+  }
+
+  // PCIe x16 slot
+  const pcie = new THREE.Mesh(new THREE.BoxGeometry(3.6,0.1,0.22), M.plastic);
+  pcie.position.set(0.3, t/2+0.05, 1.4);
+  g.add(pcie);
+
+  // M.2 slots
+  for(const z of [2.6, 3.4]){
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.03,1.8), M.aluDark);
+    m2.position.set(-2.6, t/2+0.03, z);
+    g.add(m2);
+  }
+
+  // rear IO shroud
+  const io = new THREE.Mesh(new THREE.BoxGeometry(0.25,1.1,2.6), M.alu);
+  io.position.set(-4.25, t/2+0.55, -3.2);
+  io.castShadow = true;
+  g.add(io);
+
+  g.position.y = 0;
+  return g;
+}
+
+function buildGpu(gpu){
+  const g = new THREE.Group();
+  const lenU = (gpu ? gpu.len : 280) * U;
+  const h = 1.4, d = 2.0;
+  const pcb = new THREE.Mesh(new THREE.BoxGeometry(lenU, 0.05, d), M.pcbGpu);
+  pcb.position.y = 0.02;
+  g.add(pcb);
+
+  const shroud = new THREE.Mesh(new THREE.BoxGeometry(lenU*0.92, h, d*0.98), M.chassis);
+  shroud.position.y = h/2+0.05;
+  shroud.castShadow = true;
+  g.add(shroud);
+
+  const fanCount = lenU > 7 ? 3 : 2;
+  for(let i=0;i<fanCount;i++){
+    const fan = makeFan(85);
+    fan.rotation.x = Math.PI/2;
+    fan.position.set(-lenU*0.34 + i*(lenU*0.68/(fanCount-1||1)), h/2+0.05+0.72, 0);
+    g.add(fan);
+  }
+
+  // heatpipes
+  for(let i=0;i<4;i++){
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-lenU*0.3, h*0.3, -0.3+i*0.15),
+      new THREE.Vector3(0, h*0.75, -0.3+i*0.15),
+      new THREE.Vector3(lenU*0.3, h*0.3, -0.3+i*0.15),
+    ]);
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 20, 0.035, 8), M.copper);
+    tube.position.y = 0.05;
+    g.add(tube);
+  }
+
+  // backplate
+  const backplate = new THREE.Mesh(new THREE.BoxGeometry(lenU*0.96, 0.03, d*0.98), M.aluDark);
+  backplate.position.set(0, 0.02, -d/2-0.02);
+  g.add(backplate);
+
+  // ARGB strip along shroud edge
+  const strip = new THREE.Mesh(new THREE.BoxGeometry(lenU*0.9, 0.03, 0.03), makeArgb());
+  strip.position.set(0, h+0.06, d/2-0.05);
+  g.add(strip);
+
+  // I/O bracket
+  const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.15, h, d), M.aluDark);
+  bracket.position.set(-lenU/2-0.08, h/2+0.05, 0);
+  g.add(bracket);
+
+  // 12VHPWR connector nub
+  const pwr = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.22,0.4), M.plastic);
+  pwr.position.set(lenU*0.25, h+0.11, d*0.15);
+  g.add(pwr);
+
+  g.userData.length = lenU;
+  g.userData.height = h;
+  return g;
+}
+
+function buildCooler(cooler){
+  const g = new THREE.Group();
+  if(!cooler || cooler.kind==='air'){
+    const heightU = (cooler ? cooler.height : 160) * U;
+    const finCount = 44;
+    for(let i=0;i<finCount;i++){
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.02, heightU, 1.05), M.alu);
+      fin.position.set(-0.44+i*(0.88/finCount), heightU/2, 0);
+      g.add(fin);
+    }
+    for(let i=0;i<4;i++){
+      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,heightU*0.96,8), M.copper);
+      pipe.position.set(-0.3+i*0.2, heightU/2, -0.35);
+      g.add(pipe);
+    }
+    const fan = makeFan(120);
+    fan.rotation.x = Math.PI/2; fan.rotation.z = Math.PI/2;
+    fan.position.set(0, heightU*0.55, 0.62);
+    g.add(fan);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,0.1,16), M.copper);
+    base.position.y = 0.05;
+    g.add(base);
+    g.userData.height = heightU;
+  } else {
+    // AIO pump on CPU + radiator mounted to case top
+    const pump = new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.42,0.32,24), M.chassis);
+    pump.position.y = 0.16;
+    pump.castShadow = true;
+    g.add(pump);
+    const cap = new THREE.Mesh(new THREE.CircleGeometry(0.34,24), makeArgb());
+    cap.position.y = 0.325; cap.rotation.x = -Math.PI/2;
+    g.add(cap);
+    g.userData.height = 0.4;
+    g.userData.isAio = true;
+    g.userData.radMm = cooler.radMm;
+  }
+  return g;
+}
+
+function buildRadiator(radMm){
+  const g = new THREE.Group();
+  const lenU = radMm*U;
+  const rad = new THREE.Mesh(new THREE.BoxGeometry(lenU, 0.28, 1.1), M.aluDark);
+  rad.castShadow = true;
+  g.add(rad);
+  const fanCount = Math.round(radMm/120);
+  for(let i=0;i<fanCount;i++){
+    const fan = makeFan(115);
+    fan.rotation.x = Math.PI/2;
+    fan.position.set(-lenU/2 + (i+0.5)*(lenU/fanCount), 0, -0.6);
+    g.add(fan);
+  }
+  return g;
+}
+
+function buildPsu(psu){
+  const g = new THREE.Group();
+  const box = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.5, 4.0), M.chassis);
+  box.castShadow = true;
+  g.add(box);
+  const fan = makeFan(120, false);
+  fan.position.set(0, -0.76, 0);
+  fan.rotation.x = -Math.PI/2;
+  g.add(fan);
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(1.6,0.8), new THREE.MeshStandardMaterial({color:0x22242c}));
+  label.position.set(1.71,0,0); label.rotation.y = Math.PI/2;
+  g.add(label);
+  return g;
+}
+
+function buildStorage(){
+  const g = new THREE.Group();
+  const ssd = new THREE.Mesh(new THREE.BoxGeometry(0.55,0.03,1.9), M.aluDark);
+  g.add(ssd);
+  return g;
+}
+
+function cableTube(a,b, sag=0.15){
+  const mid = new THREE.Vector3().addVectors(a,b).multiplyScalar(0.5);
+  mid.y -= sag;
+  const curve = new THREE.CatmullRomCurve3([a, mid, b]);
+  return new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.035, 6), M.cableSleeve);
+}
+
+function buildCase(kase){
+  const g = new THREE.Group();
+  const w = 8.8, h = 10.2, d = 9.6;
+  const wallMat = M.chassisMesh;
+  const panels = [
+    {size:[0.08,h,d], pos:[-w/2,h/2,0]},          // left
+    {size:[w,0.08,d], pos:[0,0,0]},                // bottom
+    {size:[w,0.08,d], pos:[0,h,0]},                // top
+    {size:[w,h,0.08], pos:[0,h/2,-d/2]},           // back
+    {size:[0.08,h,d], pos:[w*0.05, h/2, 0]},       // partial front bezel accent (mesh)
+  ];
+  panels.forEach(p=>{
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...p.size), wallMat);
+    mesh.position.set(...p.pos);
+    mesh.receiveShadow = true; mesh.castShadow = true;
+    g.add(mesh);
+  });
+  // front mesh vents
+  const frontMat = new THREE.MeshStandardMaterial({color:0x0e0f13, metalness:0.5, roughness:0.6, wireframe:true});
+  const front = new THREE.Mesh(new THREE.BoxGeometry(0.06,h*0.96,d*0.96), frontMat);
+  front.position.set(w/2, h/2, 0);
+  g.add(front);
+  const frontSolid = new THREE.Mesh(new THREE.BoxGeometry(0.03,h*0.96,d*0.96), M.chassisMesh);
+  frontSolid.position.set(w/2-0.02, h/2, 0);
+  g.add(frontSolid);
+
+  if(kase && kase.glass !== false){
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(0.05, h*0.9, d*0.9), M.glass);
+    panel.position.set(-w/2-0.001, h/2, 0);
+    panel.userData.isGlass = true;
+    g.add(panel);
+  }
+
+  // feet
+  for(const [x,z] of [[-w/2+0.4,-d/2+0.5],[w/2-0.4,-d/2+0.5],[-w/2+0.4,d/2-0.5],[w/2-0.4,d/2-0.5]]){
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.2,0.18,10), M.plastic);
+    foot.position.set(x,-0.09,z);
+    g.add(foot);
+  }
+
+  g.userData.dims = {w,h,d};
+  return g;
+}
+
+/* ---------- Rig assembly + exploded targets ---------- */
+let rig = new THREE.Group();
+scene.add(rig);
+let explodeTargets = []; // {obj, from:Vector3, to:Vector3}
+
+function rebuildScene(){
+  rig.clear();
+  argbMats.length = 0;
+  explodeTargets = [];
+
+  const kase = buildCase(state.case);
+  rig.add(kase);
+  const dims = kase.userData.dims || {w:8.8,h:10.2,d:9.6};
+
+  // Motherboard tray position (against back-right, vertical plane represented flat here for readability -> mount vertically)
+  const mobo = buildMotherboard(state.mobo, state.cpu, state.ram);
+  mobo.rotation.z = Math.PI/2;
+  mobo.rotation.y = Math.PI/2;
+  const moboSnap = new THREE.Vector3(dims.w*0.06, dims.h*0.52, 0);
+  mobo.position.copy(moboSnap);
+  rig.add(mobo);
+  explodeTargets.push({obj:mobo, dir:new THREE.Vector3(2.5,0,0)});
+
+  // GPU (attached below mobo, hanging in PCIe slot, horizontal)
+  if(state.gpu){
+    const gpu = buildGpu(state.gpu);
+    const gpuSnap = new THREE.Vector3(dims.w*0.06+0.3, dims.h*0.30, dims.d*0.02);
+    gpu.position.copy(gpuSnap);
+    rig.add(gpu);
+    explodeTargets.push({obj:gpu, dir:new THREE.Vector3(0,0,3.2)});
+  }
+
+  // Cooler / radiator
+  if(state.cooler){
+    const cooler = buildCooler(state.cooler);
+    if(cooler.userData.isAio){
+      const pumpSnap = new THREE.Vector3(dims.w*0.06-0.65, dims.h*0.52, 0);
+      cooler.position.copy(pumpSnap);
+      rig.add(cooler);
+      explodeTargets.push({obj:cooler, dir:new THREE.Vector3(-1.5,0,0)});
+
+      const rad = buildRadiator(cooler.userData.radMm || 240);
+      rad.rotation.x = Math.PI/2;
+      const radSnap = new THREE.Vector3(0, dims.h-0.5, 0);
+      rad.position.copy(radSnap);
+      rig.add(rad);
+      explodeTargets.push({obj:rad, dir:new THREE.Vector3(0,2.4,0)});
+    } else {
+      cooler.rotation.z = Math.PI/2;
+      cooler.rotation.y = Math.PI/2;
+      const cSnap = new THREE.Vector3(dims.w*0.06-0.7, dims.h*0.52, 0);
+      cooler.position.copy(cSnap);
+      rig.add(cooler);
+      explodeTargets.push({obj:cooler, dir:new THREE.Vector3(-2.2,0,0)});
+    }
+  }
+
+  // PSU (bottom)
+  if(state.psu){
+    const psu = buildPsu(state.psu);
+    const pSnap = new THREE.Vector3(0, 0.9, dims.d*0.28);
+    psu.position.copy(pSnap);
+    rig.add(psu);
+    explodeTargets.push({obj:psu, dir:new THREE.Vector3(0,-2.2,0)});
+
+    // cables from PSU to mobo + gpu
+    const psuTop = pSnap.clone().add(new THREE.Vector3(0,0.76,-1.6));
+    const moboPt = moboSnap.clone().add(new THREE.Vector3(0.1,1.5,0));
+    const c1 = cableTube(psuTop, moboPt, 0.4);
+    rig.add(c1);
+    if(state.gpu){
+      const gpuPt = new THREE.Vector3(dims.w*0.06+0.3+1.2, dims.h*0.30+0.7, dims.d*0.02);
+      const c2 = cableTube(psuTop, gpuPt, 0.5);
+      rig.add(c2);
+    }
+  }
+
+  // Storage
+  if(state.storage){
+    const ssd = buildStorage();
+    ssd.position.set(dims.w*0.06-1.4, dims.h*0.55, dims.d*0.2);
+    rig.add(ssd);
+    explodeTargets.push({obj:ssd, dir:new THREE.Vector3(-1.2,0,0)});
+  }
+
+  // store rest positions for explode lerp
+  explodeTargets.forEach(t=> t.rest = t.obj.position.clone());
+
+  applyGlassVisibility();
+  applyExplode(state.explode);
+  frameCamera(dims);
+}
+
+function applyGlassVisibility(){
+  rig.traverse(o=>{ if(o.userData.isGlass){ o.visible = state.glass; } });
+}
+
+function applyExplode(pct){
+  const t = pct/100;
+  explodeTargets.forEach(item=>{
+    const offset = item.dir.clone().multiplyScalar(t*2.2);
+    item.obj.position.copy(item.rest.clone().add(offset));
+  });
+}
+
+let currentDims = {w:8.8,h:10.2,d:9.6};
+function frameCamera(dims){
+  currentDims = dims;
+}
+
+/* ---------- Camera presets ---------- */
+function goCam(name){
+  const d = currentDims;
+  const targets = {
+    iso:     {pos:[7,6.5,9], look:[0,d.h*0.45,0]},
+    front:   {pos:[0,d.h*0.5,11], look:[0,d.h*0.5,0]},
+    side:    {pos:[11,d.h*0.5,0], look:[0,d.h*0.5,0]},
+    top:     {pos:[0.01,13,0.01], look:[0,d.h*0.4,0]},
+    internal:{pos:[3,d.h*0.55,3], look:[-1,d.h*0.5,0]},
+  };
+  const t = targets[name];
+  gsap.to(camera.position, {x:t.pos[0], y:t.pos[1], z:t.pos[2], duration:1.1, ease:'power3.inOut'});
+  gsap.to(controls.target, {x:t.look[0], y:t.look[1], z:t.look[2], duration:1.1, ease:'power3.inOut'});
+}
+
+/* ============================== DIAGNOSTICS ============================== */
+function computeTdp(){
+  let w = 0;
+  if(state.cpu) w += state.cpu.tdp;
+  if(state.gpu) w += state.gpu.tdp;
+  w += 60; // board, fans, drives, RGB baseline
+  return w;
+}
+
+function updateWattage(){
+  const load = computeTdp();
+  document.getElementById('wattage-num').textContent = `${load} W`;
+  const psuW = state.psu ? state.psu.watt : null;
+  document.getElementById('wattage-sub').textContent = psuW ? `of ${psuW}W supplied · ${Math.round(load/psuW*100)}% load` : 'estimated load · pick a PSU to compare';
+  const pct = psuW ? Math.min(100, load/psuW*100) : Math.min(100, load/10);
+  document.getElementById('wattage-fill').style.width = pct+'%';
+}
+
+function checkRow(status, text, sub){
+  const dot = status===1?'ok':status===-1?'err':'neutral';
+  return `<div class="check-row"><div class="dot ${dot}"></div><div><div class="check-text">${text}</div>${sub?`<div class="check-sub">${sub}</div>`:''}</div></div>`;
+}
+
+function updateDiagnostics(){
+  updateWattage();
+  const rows = [];
+
+  // Socket compatibility
+  if(state.cpu && state.mobo){
+    const ok = state.cpu.socket === state.mobo.socket;
+    rows.push(checkRow(ok?1:-1, ok ? `<b>${state.cpu.name}</b> matches ${state.mobo.socket}` : `Socket mismatch`, ok?null:`${state.cpu.name} needs ${state.cpu.socket}, board is ${state.mobo.socket}`));
+  } else {
+    rows.push(checkRow(0, 'CPU + motherboard socket', 'Pick both to check'));
+  }
+
+  // GPU clearance
+  if(state.gpu && state.case){
+    const ok = state.gpu.len <= state.case.maxGpuLen;
+    rows.push(checkRow(ok?1:-1, ok? `GPU fits with ${state.case.maxGpuLen-state.gpu.len}mm to spare` : `GPU too long for case`, `${state.gpu.len}mm GPU vs ${state.case.maxGpuLen}mm max`));
+  } else {
+    rows.push(checkRow(0, 'GPU length vs case clearance', 'Pick both to check'));
+  }
+
+  // Cooler clearance
+  if(state.cooler && state.case){
+    if(state.cooler.kind === 'air'){
+      const ok = state.cooler.height <= state.case.maxCoolerH;
+      rows.push(checkRow(ok?1:-1, ok? `Cooler height clears side panel` : `Cooler too tall for case`, `${state.cooler.height}mm cooler vs ${state.case.maxCoolerH}mm max`));
+    } else {
+      const ok = state.cooler.radMm <= state.case.radSupport;
+      rows.push(checkRow(ok?1:-1, ok? `Radiator mounts fine` : `Radiator too large for case mounts`, `${state.cooler.radMm}mm radiator vs ${state.case.radSupport}mm max`));
+    }
+  } else {
+    rows.push(checkRow(0, 'Cooler vs case clearance', 'Pick both to check'));
+  }
+
+  // RAM compatibility
+  if(state.ram && state.mobo){
+    const ok = state.ram.type === state.mobo.ram;
+    rows.push(checkRow(ok?1:-1, ok? `RAM type matches board` : `RAM type mismatch`, `${state.ram.type} vs board's ${state.mobo.ram}`));
+  } else {
+    rows.push(checkRow(0, 'RAM type vs motherboard', 'Pick both to check'));
+  }
+
+  // Power headroom
+  if(state.psu){
+    const load = computeTdp();
+    const ok = state.psu.watt >= load*1.2;
+    rows.push(checkRow(ok?1:-1, ok? `PSU has healthy headroom` : `PSU undersized for +20% safety margin`, `${load}W load needs ≥${Math.ceil(load*1.2)}W, PSU is ${state.psu.watt}W`));
+  } else {
+    rows.push(checkRow(0, 'PSU wattage vs system draw', 'Pick a PSU to check'));
+  }
+
+  document.getElementById('checks').innerHTML = rows.join('');
+}
+
+/* ---------- FPS predictor (rough heuristic, not measured data) ---------- */
+const GAMES = [
+  {name:'Cyberpunk 2077', w:1.0},
+  {name:'Fortnite', w:1.35},
+  {name:'Baldur\'s Gate 3', w:1.05},
+  {name:'Call of Duty: MW3', w:1.15},
+];
+function updateFps(){
+  const list = document.getElementById('fps-list');
+  if(!state.gpu || !state.cpu){
+    list.innerHTML = `<div style="font-size:11.5px;color:var(--sub)">Pick a CPU and GPU for an estimate</div>`;
+    return;
+  }
+  const gpuScore = state.gpu.tier;
+  const cpuScore = state.cpu.tier;
+  const combined = gpuScore*0.78 + cpuScore*0.22; // GPU-bound bias typical at 1440p
+  list.innerHTML = GAMES.map(game=>{
+    const fps = Math.round(combined * 11.5 * game.w);
+    const pct = Math.min(100, fps/200*100);
+    return `<div class="fps-row"><span>${game.name}</span><div style="display:flex;align-items:center;gap:8px;"><div class="fps-bar-bg"><div class="fps-bar" style="width:${pct}%"></div></div><span class="mono" style="width:34px;text-align:right;">${fps}</span></div></div>`;
+  }).join('');
+}
+
+function updatePrice(){
+  let total = 0;
+  const lines = [];
+  Object.entries(state).forEach(([k,v])=>{
+    if(v && v.price !== undefined){ total += v.price; lines.push(`<div class="price-line"><span>${v.name}</span><span>$${v.price}</span></div>`); }
+  });
+  document.getElementById('price-total').textContent = `$${total.toLocaleString()}`;
+  document.getElementById('price-lines').innerHTML = lines.join('');
+}
+
+/* ============================== EVENTS ============================== */
+document.getElementById('explode').addEventListener('input', e=>{
+  state.explode = +e.target.value;
+  document.getElementById('explode-val').textContent = state.explode+'%';
+  applyExplode(state.explode);
+});
+
+document.getElementById('glass-toggle').addEventListener('click', function(){
+  state.glass = !state.glass;
+  this.classList.toggle('active', state.glass);
+  this.textContent = state.glass ? 'Glass panel' : 'Glass panel (off)';
+  applyGlassVisibility();
+});
+
+document.getElementById('grid-toggle').addEventListener('click', function(){
+  grid.visible = !grid.visible;
+  this.classList.toggle('active', grid.visible);
+});
+document.getElementById('spin-toggle').addEventListener('click', function(){
+  state.autoRotate = !state.autoRotate;
+  controls.autoRotate = state.autoRotate;
+  controls.autoRotateSpeed = 1.4;
+  this.classList.toggle('active', state.autoRotate);
+});
+
+document.getElementById('ar-hint-btn').addEventListener('click', ()=>{
+  alert('AR preview needs a WebXR-capable phone browser pointed at this page over https — open this hosted build on your phone and look for the AR icon once you\'re on Chrome for Android or a WebXR-enabled browser.');
+});
+
+document.querySelectorAll('#cam-presets .pill').forEach(btn=>{
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('#cam-presets .pill').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+    goCam(this.dataset.cam);
+  });
+});
+
+document.querySelectorAll('.profile-btn').forEach(btn=>{
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.profile-btn').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+    state.profile = this.dataset.p;
+  });
+});
+document.getElementById('hue-slider').addEventListener('input', e=>{ state.hue = +e.target.value; });
+
+window.addEventListener('resize', ()=>{
+  camera.aspect = wrap.clientWidth/wrap.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+});
+
+/* ============================== ANIMATE ============================== */
+const clock = new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  argbMats.forEach((m,i)=>{
+    if(state.profile==='off'){ m.emissiveIntensity = 0; return; }
+    if(state.profile==='static'){
+      m.emissive.setHSL(state.hue/360, 1, 0.55);
+      m.emissiveIntensity = 1.4;
+    } else if(state.profile==='pulse'){
+      m.emissive.setHSL(state.hue/360, 1, 0.55);
+      m.emissiveIntensity = 0.6 + Math.sin(t*2.2)*0.6;
+    } else if(state.profile==='rainbow'){
+      const hue = ((t*40 + i*22) % 360)/360;
+      m.emissive.setHSL(hue, 1, 0.55);
+      m.emissiveIntensity = 1.3;
+    }
+  });
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+/* ============================== INIT ============================== */
+function init(){
+  // sensible defaults so the scene isn't empty
+  selectPart('case', DB.case[0]);
+  selectPart('mobo', DB.mobo[1]);
+  selectPart('cpu', DB.cpu[5]);
+  selectPart('gpu', DB.gpu[3]);
+  selectPart('ram', DB.ram[0]);
+  selectPart('cooler', DB.cooler[1]);
+  selectPart('psu', DB.psu[0]);
+  selectPart('storage', DB.storage[0]);
+
+  state.activeCat = 'case';
+  renderCatButtons();
+  renderPartList();
+
+  goCam('iso');
+  document.getElementById('loading').style.display = 'none';
+  animate();
+}
+init();
+</script>
 </body>
 </html>
